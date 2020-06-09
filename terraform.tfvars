@@ -4,7 +4,7 @@ client_id       = "9306c4f0-3049-415c-84fd-2e0e6c416c78"
 client_secret   = "Using Key Vault Secret: client-secret"
 
 spoke                    = "example-spoke"
-spoke_vnet_address_space = ["172.16.0.0/24"]
+spoke_vnet_address_space = ["172.16.1.0/24"]
 
 location = "West Europe"
 

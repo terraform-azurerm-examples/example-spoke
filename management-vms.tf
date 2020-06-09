@@ -5,7 +5,7 @@ locals {
     tags                = azurerm_resource_group.spoke.tags
     availability_set    = true
     load_balancer       = true
-    subnet_id           = azurerm_subnet.SharedServices.id
+    subnet_id           = azurerm_subnet.Web.id
   }
 
   vm_defaults = {
@@ -17,13 +17,13 @@ locals {
     additional_ssh_keys  = []
     vm_size              = "Standard_B1ls"
     storage_account_type = "Standard_LRS"
-    subnet_id            = azurerm_subnet.SharedServices.id
+    subnet_id            = azurerm_subnet.Web.id
     boot_diagnostics_uri = azurerm_storage_account.boot_diagnostics.primary_blob_endpoint
   }
 }
 
 module "single" {
-  source   = "github.com/terraform-azurerm-modules/terraform-azurerm-linux-vm?ref=v0.1"
+  source   = "github.com/terraform-azurerm-modules/terraform-azurerm-linux-vm" #?ref=v0.1"
   defaults = local.vm_defaults
 
   name            = "single"
@@ -32,14 +32,14 @@ module "single" {
 
 
 module "testbed_set" {
-  source   = "github.com/terraform-azurerm-modules/terraform-azurerm-set?ref=v0.1"
+  source   = "github.com/terraform-azurerm-modules/terraform-azurerm-set" #?ref=v0.1"
   defaults = local.set_defaults
 
   name = "testbed"
 }
 
 module "testbed" {
-  source   = "github.com/terraform-azurerm-modules/terraform-azurerm-linux-vm?ref=v0.1"
+  source   = "github.com/terraform-azurerm-modules/terraform-azurerm-linux-vm" #?ref=v0.1"
   defaults = local.vm_defaults
 
   module_depends_on = [module.testbed_set]
@@ -50,12 +50,14 @@ module "testbed" {
   source_image_id = data.azurerm_image.ubuntu_18_04.id
 }
 
-module "minimalargs" {
-  source              = "github.com/terraform-azurerm-modules/terraform-azurerm-linux-vm?ref=v0.1"
+module "nodefaults" {
+  source              = "github.com/terraform-azurerm-modules/terraform-azurerm-linux-vm" #?ref=v0.1"
   resource_group_name = azurerm_resource_group.spoke.name
+  location            = azurerm_resource_group.spoke.location
+  tags                = azurerm_resource_group.spoke.tags
 
-  name                 = "minimalargs"
+  name                 = "nodefaults"
   source_image_id      = data.azurerm_shared_image.ubuntu_18_04.id
-  subnet_id            = azurerm_subnet.SharedServices.id
+  subnet_id            = azurerm_subnet.App.id
   boot_diagnostics_uri = azurerm_storage_account.boot_diagnostics.primary_blob_endpoint
 }
