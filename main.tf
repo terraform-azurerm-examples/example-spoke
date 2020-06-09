@@ -7,7 +7,8 @@ provider "azurerm" {
   tenant_id       = var.tenant_id
   subscription_id = var.subscription_id
   client_id       = var.client_id
-  client_secret   = try(data.azurerm_key_vault_secret.client_secret.value, var.client_secret)
+  client_secret   = data.azurerm_key_vault_secret.client_secret.value
+  // client_secret   = var.client_secret
 }
 
 provider "null" {
