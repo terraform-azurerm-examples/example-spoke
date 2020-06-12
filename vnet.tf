@@ -7,15 +7,25 @@ resource "azurerm_virtual_network" "spoke" {
 }
 
 resource "azurerm_subnet" "Web" {
-  name                 = "Web"
+  depends_on           = [azurerm_virtual_network.spoke]
+  name                 = "Web" // .0/26
   resource_group_name  = azurerm_resource_group.spoke.name
   virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [cidrsubnet(azurerm_virtual_network.spoke.address_space[0], 1, 0)]
+  address_prefixes     = [cidrsubnet(azurerm_virtual_network.spoke.address_space[0], 2, 0)]
 }
 
 resource "azurerm_subnet" "App" {
-  name                 = "App"
+  depends_on           = [azurerm_subnet.Web]
+  name                 = "App" // .128/26
   resource_group_name  = azurerm_resource_group.spoke.name
   virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [cidrsubnet(azurerm_virtual_network.spoke.address_space[0], 1, 1)]
+  address_prefixes     = [cidrsubnet(azurerm_virtual_network.spoke.address_space[0], 2, 2)]
+}
+
+resource "azurerm_subnet" "AppGw" {
+  depends_on           = [azurerm_subnet.App]
+  name                 = "AppGw" // .240/28
+  resource_group_name  = azurerm_resource_group.spoke.name
+  virtual_network_name = azurerm_virtual_network.spoke.name
+  address_prefixes     = [cidrsubnet(azurerm_virtual_network.spoke.address_space[0], 4, 15)]
 }

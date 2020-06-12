@@ -7,6 +7,7 @@ resource "azurerm_key_vault" "spoke" {
   tenant_id           = var.tenant_id
 
   sku_name                        = "standard"
+  soft_delete_enabled             = true
   enabled_for_deployment          = false
   enabled_for_template_deployment = false
   enabled_for_disk_encryption     = false
@@ -18,6 +19,15 @@ resource "azurerm_key_vault_access_policy" "service_principal" {
 
   tenant_id = var.tenant_id
   object_id = data.azurerm_client_config.current.object_id
+
+  certificate_permissions = [
+    "Create",
+    "Get",
+    "Import",
+    "List",
+    "Update",
+    "Delete",
+  ]
 
   key_permissions = [
     "Create",
@@ -32,6 +42,28 @@ resource "azurerm_key_vault_access_policy" "service_principal" {
     "List",
     "Set",
     "Delete"
+  ]
+}
+
+resource "azurerm_key_vault_access_policy" "managed_identity" {
+  key_vault_id = azurerm_key_vault.spoke.id
+
+  tenant_id = var.tenant_id
+  object_id = azurerm_user_assigned_identity.spoke.principal_id
+
+  certificate_permissions = [
+    "Get",
+    "List",
+  ]
+
+  key_permissions = [
+    "Get",
+    "List",
+  ]
+
+  secret_permissions = [
+    "Get",
+    "List",
   ]
 }
 

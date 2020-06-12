@@ -1,5 +1,5 @@
 resource "azurerm_recovery_services_vault" "spoke" {
-  name                = "${var.spoke}-recovery-vault"
+  name                = "${var.spoke}-${random_string.spoke.result}"
   resource_group_name = azurerm_resource_group.spoke.name
   location            = azurerm_resource_group.spoke.location
   tags                = azurerm_resource_group.spoke.tags
