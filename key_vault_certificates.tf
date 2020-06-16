@@ -1,5 +1,5 @@
 resource "azurerm_key_vault_certificate" "caCert_pfx" {
-  depends_on = [ azurerm_key_vault_access_policy.service_principal ]
+  depends_on = [azurerm_key_vault_access_policy.service_principal]
 
   // openssl pkcs12 -export -out caCert.pfx -inkey caKey.pem -in caCert.pem
   name         = "caCert-pfx"

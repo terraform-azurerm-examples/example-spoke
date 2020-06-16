@@ -192,23 +192,20 @@ resource "azurerm_application_gateway" "appgw" {
 
 
 locals {
-  appgw_backend_pool_id = {
+  application_gateway_backend_pool_id = {
     for bepool in azurerm_application_gateway.appgw.backend_address_pool :
     (bepool.name) => bepool.id
   }
 }
 
-output "appgw" {
+output "application_gateway" {
   value = azurerm_application_gateway.appgw
 }
 
-output "appgw-pip" {
+output "application_gateway_pip" {
   value = azurerm_public_ip.appgw
 }
 
-output "bepoolids" {
-  value = {
-    for bepool in azurerm_application_gateway.appgw.backend_address_pool :
-    (bepool.name) => bepool.id
-  }
+output "application_gateway_backend_pool_ids" {
+  value = local.application_gateway_backend_pool_id
 }
