@@ -19,6 +19,11 @@ variable "dns_servers" {
   default     = null
 }
 
+variable "aad" {
+  description = "Optional list of AAD objectIds to add to key vault access."
+  type        = list(string)
+  default     = []
+}
 // -----------------------------------------------------------
 
 variable "tenant_id" {

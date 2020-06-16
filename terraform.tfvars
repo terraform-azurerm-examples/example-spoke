@@ -3,7 +3,11 @@ subscription_id = "2d31be49-d959-4415-bb65-8aec2c90ba62"
 client_id       = "9306c4f0-3049-415c-84fd-2e0e6c416c78"
 client_secret   = "Using Key Vault Secret: client-secret"
 
-spoke                    = "example-spoke"
+aad = [
+  "10608c01-619a-4c23-bdbc-b5d22aeb2f09" // mySpokeApplication group
+]
+
+spoke                    = "spoke"
 spoke_vnet_address_space = ["172.16.1.0/24"]
 
 location = "West Europe"

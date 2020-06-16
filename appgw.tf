@@ -26,47 +26,23 @@ resource "azurerm_application_gateway" "appgw" {
     max_capacity = 6
   }
 
-  backend_address_pool {
-    name = "web_pool1"
+  identity {
+    identity_ids = [azurerm_user_assigned_identity.spoke.id]
+    type         = "UserAssigned"
   }
 
-  backend_address_pool {
-    name = "web_pool2"
+  ssl_certificate {
+    name                = "self_signed"
+    key_vault_secret_id = azurerm_key_vault_certificate.caCert_pfx.secret_id
   }
 
-  backend_http_settings {
-    name                                = "https_pool1"
-    affinity_cookie_name                = "pool1_cookie"
-    cookie_based_affinity               = "Enabled"
-    host_name                           = "azurecitadel.com"
-    path                                = "/"
-    pick_host_name_from_backend_address = false
-    port                                = 443
-    probe_name                          = "Https"
-    protocol                            = "Https"
-    request_timeout                     = 20
 
-    connection_draining {
-      drain_timeout_sec = 60
-      enabled           = true
-    }
+  gateway_ip_configuration {
+    name      = "appGatewayIpConfig"
+    subnet_id = azurerm_subnet.AppGw.id
   }
 
-  backend_http_settings {
-    name                                = "https_pool2"
-    affinity_cookie_name                = "pool2_cookie"
-    cookie_based_affinity               = "Enabled"
-    path                                = "/app2"
-    pick_host_name_from_backend_address = false
-    port                                = 443
-    protocol                            = "Https"
-    request_timeout                     = 20
-
-    connection_draining {
-      drain_timeout_sec = 60
-      enabled           = true
-    }
-  }
+  // ========================================================================
 
   frontend_ip_configuration {
     name                          = "appGwPublicFrontendIp"
@@ -81,14 +57,16 @@ resource "azurerm_application_gateway" "appgw" {
     private_ip_address            = cidrhost(azurerm_subnet.AppGw.address_prefix, -2)
   }
 
-  gateway_ip_configuration {
-    name      = "appGatewayIpConfig"
-    subnet_id = azurerm_subnet.AppGw.id
-  }
-
   frontend_port {
     name = "port_80"
     port = 80
+  }
+
+  http_listener {
+    name                           = "http"
+    frontend_ip_configuration_name = "appGwPrivateFrontendIp"
+    frontend_port_name             = "port_80"
+    protocol                       = "Http"
   }
 
   frontend_port {
@@ -97,23 +75,59 @@ resource "azurerm_application_gateway" "appgw" {
   }
 
   http_listener {
-    name                           = "private_https"
+    name                           = "https_self_signed"
     frontend_ip_configuration_name = "appGwPrivateFrontendIp"
     frontend_port_name             = "port_443"
     protocol                       = "Https"
-    ssl_certificate_name           = "private_https"
+    ssl_certificate_name           = "self_signed"
   }
 
+  /*
   http_listener {
-    name                           = "private_http"
+    name                           = "https_azurecitadel_com"
     frontend_ip_configuration_name = "appGwPrivateFrontendIp"
-    frontend_port_name             = "port_80"
-    protocol                       = "Http"
+    frontend_port_name             = "port_443"
+    protocol                       = "Https"
+    ssl_certificate_name           = "azurecitadel_com"
+  }
+  */
+
+  // ========================================================================
+
+  backend_address_pool {
+    name = "web_pool1"
   }
 
-  identity {
-    identity_ids = [azurerm_user_assigned_identity.spoke.id]
-    type         = "UserAssigned"
+  backend_http_settings {
+    name                  = "https_pool1"
+    affinity_cookie_name  = "pool1_cookie"
+    cookie_based_affinity = "Enabled"
+    host_name             = "azurecitadel.com"
+    path                  = "/"
+    port                  = 443
+    probe_name            = "Https"
+    protocol              = "Https"
+    request_timeout       = 20
+
+    connection_draining {
+      drain_timeout_sec = 60
+      enabled           = true
+    }
+  }
+
+  backend_address_pool {
+    name = "web_pool2"
+  }
+
+  backend_http_settings {
+    name                  = "https_pool2"
+    affinity_cookie_name  = "pool2_cookie"
+    cookie_based_affinity = "Disabled"
+    path                  = "/media/"
+    host_name             = "127.0.0.1"
+    port                  = 443
+    protocol              = "Https"
+    request_timeout       = 20
   }
 
   probe {
@@ -126,35 +140,33 @@ resource "azurerm_application_gateway" "appgw" {
     unhealthy_threshold = 3
   }
 
+  // ========================================================================
+
+
+  request_routing_rule {
+    name                        = "redirect_http_to_https"
+    rule_type                   = "Basic"
+    http_listener_name          = "http"
+    redirect_configuration_name = "redirect_http_to_https"
+  }
+
   redirect_configuration {
-    name                 = "private_http_to_https"
+    name                 = "redirect_http_to_https"
     redirect_type        = "Permanent"
-    target_listener_name = "private_https"
+    target_listener_name = "https_self_signed"
     include_path         = true
     include_query_string = true
   }
 
   request_routing_rule {
-    name                        = "private_http_to_https"
-    rule_type                   = "Basic"
-    http_listener_name          = "private_http"
-    redirect_configuration_name = "private_http_to_https"
-  }
-
-  request_routing_rule {
-    name               = "private_https"
+    name               = "https"
     rule_type          = "PathBasedRouting"
-    http_listener_name = "private_https"
-    url_path_map_name  = "private_https"
-  }
-
-  ssl_certificate {
-    name                = "private_https"
-    key_vault_secret_id = "https://example-spoke-d5nsem40ua.vault.azure.net/secrets/caCert-pfx/e51ec1428f30446ea4bea438896403d5"
+    http_listener_name = "https_self_signed"
+    url_path_map_name  = "https_paths"
   }
 
   url_path_map {
-    name                               = "private_https"
+    name                               = "https_paths"
     default_backend_http_settings_name = "https_pool1"
     default_backend_address_pool_name  = "web_pool1"
 
@@ -166,6 +178,7 @@ resource "azurerm_application_gateway" "appgw" {
         "/applicationpath/*",
       ]
     }
+
     path_rule {
       name                       = "application2path_to_pool2"
       backend_http_settings_name = "https_pool2"
@@ -176,6 +189,7 @@ resource "azurerm_application_gateway" "appgw" {
     }
   }
 }
+
 
 locals {
   appgw_backend_pool_id = {
@@ -190,4 +204,11 @@ output "appgw" {
 
 output "appgw-pip" {
   value = azurerm_public_ip.appgw
+}
+
+output "bepoolids" {
+  value = {
+    for bepool in azurerm_application_gateway.appgw.backend_address_pool :
+    (bepool.name) => bepool.id
+  }
 }

@@ -12,6 +12,9 @@ resource "azurerm_subnet" "Web" {
   resource_group_name  = azurerm_resource_group.spoke.name
   virtual_network_name = azurerm_virtual_network.spoke.name
   address_prefixes     = [cidrsubnet(azurerm_virtual_network.spoke.address_space[0], 2, 0)]
+
+  service_endpoints = ["Microsoft.KeyVault"]
+
 }
 
 resource "azurerm_subnet" "App" {
@@ -20,6 +23,9 @@ resource "azurerm_subnet" "App" {
   resource_group_name  = azurerm_resource_group.spoke.name
   virtual_network_name = azurerm_virtual_network.spoke.name
   address_prefixes     = [cidrsubnet(azurerm_virtual_network.spoke.address_space[0], 2, 2)]
+
+  service_endpoints = ["Microsoft.Sql", "Microsoft.KeyVault"]
+
 }
 
 resource "azurerm_subnet" "AppGw" {
@@ -28,4 +34,10 @@ resource "azurerm_subnet" "AppGw" {
   resource_group_name  = azurerm_resource_group.spoke.name
   virtual_network_name = azurerm_virtual_network.spoke.name
   address_prefixes     = [cidrsubnet(azurerm_virtual_network.spoke.address_space[0], 4, 15)]
+
+  service_endpoints = ["Microsoft.KeyVault"]
+}
+
+output "vnet" {
+  value = azurerm_virtual_network.spoke
 }

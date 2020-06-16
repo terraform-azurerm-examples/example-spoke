@@ -13,13 +13,13 @@ resource "azurerm_key_vault" "spoke" {
   enabled_for_disk_encryption     = false
 
   network_acls {
-    bypass         = "AzureServices"
+    bypass = "AzureServices"
     default_action = "Allow"
     virtual_network_subnet_ids = [
-      azurerm_subnet.Web.id,
-      azurerm_subnet.App.id,
-      azurerm_subnet.AppGw.id,
-    ]
+       azurerm_subnet.Web.id,
+       azurerm_subnet.App.id,
+       azurerm_subnet.AppGw.id,
+        ]
   }
 }
 
@@ -63,107 +63,16 @@ resource "azurerm_key_vault_access_policy" "managed_identity" {
   certificate_permissions = [
     "Get",
     "List",
-    "Update",
-    "Create",
-    "Import",
-    "Delete",
-    "Recover",
-    "Backup",
-    "Restore",
-    "ManageContacts",
-    "ManageIssuers",
-    "GetIssuers",
-    "ListIssuers",
-    "SetIssuers",
-    "DeleteIssuers",
-    "Purge",
   ]
 
   key_permissions = [
     "Get",
     "List",
-    "Update",
-    "Create",
-    "Import",
-    "Delete",
-    "Recover",
-    "Backup",
-    "Restore",
-    "Decrypt",
-    "Encrypt",
-    "UnwrapKey",
-    "WrapKey",
-    "Verify",
-    "Sign",
-    "Purge",
   ]
 
   secret_permissions = [
     "Get",
     "List",
-    "Set",
-    "Delete",
-    "Recover",
-    "Backup",
-    "Restore",
-    "Purge",
-  ]
-}
-
-resource "azurerm_key_vault_access_policy" "aad" {
-  key_vault_id = azurerm_key_vault.spoke.id
-  tenant_id    = var.tenant_id
-
-  for_each  = toset(var.aad)
-  object_id = each.value
-
-  certificate_permissions = [
-    "Get",
-    "List",
-    "Update",
-    "Create",
-    "Import",
-    "Delete",
-    "Recover",
-    "Backup",
-    "Restore",
-    "ManageContacts",
-    "ManageIssuers",
-    "GetIssuers",
-    "ListIssuers",
-    "SetIssuers",
-    "DeleteIssuers",
-    "Purge",
-  ]
-
-  key_permissions = [
-    "Get",
-    "List",
-    "Update",
-    "Create",
-    "Import",
-    "Delete",
-    "Recover",
-    "Backup",
-    "Restore",
-    "Decrypt",
-    "Encrypt",
-    "UnwrapKey",
-    "WrapKey",
-    "Verify",
-    "Sign",
-    "Purge",
-  ]
-
-  secret_permissions = [
-    "Get",
-    "List",
-    "Set",
-    "Delete",
-    "Recover",
-    "Backup",
-    "Restore",
-    "Purge",
   ]
 }
 
