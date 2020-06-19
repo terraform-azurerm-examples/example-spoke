@@ -64,7 +64,7 @@ resource "azurerm_application_gateway" "appgw" {
 
   http_listener {
     name                           = "http"
-    frontend_ip_configuration_name = "appGwPrivateFrontendIp"
+    frontend_ip_configuration_name = var.application_gateway_public_frontend ? "appGwPublicFrontendIp" : "appGwPrivateFrontendIp"
     frontend_port_name             = "port_80"
     protocol                       = "Http"
   }
@@ -76,7 +76,7 @@ resource "azurerm_application_gateway" "appgw" {
 
   http_listener {
     name                           = "https_self_signed"
-    frontend_ip_configuration_name = "appGwPrivateFrontendIp"
+    frontend_ip_configuration_name = var.application_gateway_public_frontend ? "appGwPublicFrontendIp" : "appGwPrivateFrontendIp"
     frontend_port_name             = "port_443"
     protocol                       = "Https"
     ssl_certificate_name           = "self_signed"
@@ -93,14 +93,14 @@ resource "azurerm_application_gateway" "appgw" {
   */
 
   // ========================================================================
-
+/*
   backend_address_pool {
     name = "web_pool1"
   }
 
   backend_http_settings {
     name                  = "https_pool1"
-    affinity_cookie_name  = "pool1_cookie"
+    affinity_cookie_name  = "https_pool1_cookie"
     cookie_based_affinity = "Enabled"
     host_name             = "azurecitadel.com"
     path                  = "/"
@@ -121,7 +121,7 @@ resource "azurerm_application_gateway" "appgw" {
 
   backend_http_settings {
     name                  = "https_pool2"
-    affinity_cookie_name  = "pool2_cookie"
+    affinity_cookie_name  = "https_pool2_cookie"
     cookie_based_affinity = "Disabled"
     path                  = "/media/"
     host_name             = "127.0.0.1"
@@ -130,9 +130,60 @@ resource "azurerm_application_gateway" "appgw" {
     request_timeout       = 20
   }
 
+  backend_address_pool {
+    name = "web_pool3"
+  }
+
+  backend_http_settings {
+    name                  = "https_pool3"
+    affinity_cookie_name  = "https_pool3_cookie"
+    cookie_based_affinity = "Disabled"
+    path                  = "/"
+    host_name             = "127.0.0.1"
+    port                  = 443
+    protocol              = "Https"
+    request_timeout       = 20
+  }
+*/
+  dynamic "backend_address_pool" {
+    for_each = var.application_gateway_path_map
+
+    content {
+      name = backend_address_pool.key
+    }
+  }
+
+  dynamic "backend_http_settings" {
+    // May want to complicate the path map just to include different settings in here
+    // Or create a couple of standards and reference them
+    for_each = var.application_gateway_path_map
+
+    content {
+      name                  = backend_http_settings.key
+      affinity_cookie_name  = "${backend_http_settings.key}_cookie"
+      cookie_based_affinity = "Disabled"
+      path                  = "/"
+      host_name             = "127.0.0.1"
+      port                  = 80
+      protocol              = "Http"
+      request_timeout       = 20
+    }
+  }
+
   probe {
     name                = "Https"
     protocol            = "Https"
+    host                = "127.0.0.1"
+    path                = "/"
+    interval            = 30
+    timeout             = 30
+    unhealthy_threshold = 3
+  }
+
+
+  probe {
+    name                = "Http"
+    protocol            = "Http"
     host                = "127.0.0.1"
     path                = "/"
     interval            = 30
@@ -166,35 +217,40 @@ resource "azurerm_application_gateway" "appgw" {
   }
 
   url_path_map {
-    name                               = "https_paths"
-    default_backend_http_settings_name = "https_pool1"
-    default_backend_address_pool_name  = "web_pool1"
+    name                                = "https_paths"
+    default_redirect_configuration_name = "redirect_default_uri"
 
-    path_rule {
-      name                       = "applicationpath_to_pool1"
-      backend_http_settings_name = "https_pool1"
-      backend_address_pool_name  = "web_pool1"
-      paths = [
-        "/applicationpath/*",
-      ]
-    }
+    dynamic "path_rule" {
+      for_each = var.application_gateway_path_map
 
-    path_rule {
-      name                       = "application2path_to_pool2"
-      backend_http_settings_name = "https_pool2"
-      backend_address_pool_name  = "web_pool2"
-      paths = [
-        "/application2path/*",
-      ]
+      content {
+        name                       = path_rule.key
+        backend_http_settings_name = path_rule.key
+        backend_address_pool_name  = path_rule.key
+        paths                      = path_rule.value
+      }
     }
+  }
+
+  redirect_configuration {
+    name                 = "redirect_default_uri"
+    redirect_type        = "Permanent"
+    target_url           = var.application_gateway_default_uri
+    include_path         = false
+    include_query_string = false
   }
 }
 
 
 locals {
-  application_gateway_backend_pool_id = {
+  application_gateway_backend_pool_ids = {
     for bepool in azurerm_application_gateway.appgw.backend_address_pool :
     (bepool.name) => bepool.id
+  }
+
+  application_gateway_probe_ids = {
+    for probe in azurerm_application_gateway.appgw.probe :
+    (probe.name) => probe.id
   }
 }
 
@@ -207,5 +263,9 @@ output "application_gateway_pip" {
 }
 
 output "application_gateway_backend_pool_ids" {
-  value = local.application_gateway_backend_pool_id
+  value = local.application_gateway_backend_pool_ids
+}
+
+output "application_gateway_probe_ids" {
+  value = local.application_gateway_probe_ids
 }

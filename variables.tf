@@ -24,6 +24,33 @@ variable "aad" {
   type        = list(string)
   default     = []
 }
+
+// -----------------------------------------------------------
+
+variable "application_gateway_public_frontend" {
+  description = "Boolean to specify listeners on the public frontend rather than the default private frontend."
+  type        = bool
+  default     = false
+}
+
+variable "application_gateway_pools" {
+  description = "List of backend pools to create in the application gateway. Also used to create matching application security groups."
+  type        = list
+  default     = []
+}
+
+variable "application_gateway_path_map" {
+  description = "Map of lists, keyed by application gateway backend pools and with a list if URL paths."
+  type        = map(list(string))
+  default     = {}
+}
+
+variable "application_gateway_default_uri" {
+  description = "Default URI to use if none of the path maps apply."
+  type        = string
+  default     = ""
+}
+
 // -----------------------------------------------------------
 
 variable "tenant_id" {

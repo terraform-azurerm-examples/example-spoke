@@ -10,6 +10,7 @@ aad = [
 spoke                    = "spoke"
 spoke_vnet_address_space = ["172.16.1.0/24"]
 
+
 location = "West Europe"
 
 tags = {
