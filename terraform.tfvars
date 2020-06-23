@@ -1,11 +1,10 @@
-tenant_id       = "f246eeb7-b820-4971-a083-9e100e084ed0"
-subscription_id = "2d31be49-d959-4415-bb65-8aec2c90ba62"
-client_id       = "9306c4f0-3049-415c-84fd-2e0e6c416c78"
-client_secret   = "Using Key Vault Secret: client-secret"
 
-aad = [
-  "10608c01-619a-4c23-bdbc-b5d22aeb2f09" // mySpokeApplication group
-]
+tenant_id       = "72f988bf-86f1-41af-91ab-2d7cd011db47"
+subscription_id = "2ca40be1-7e80-4f2b-92f7-06b2123a68cc"
+
+// aad = [
+//   "10608c01-619a-4c23-bdbc-b5d22aeb2f09" // mySpokeApplication group
+// ]
 
 spoke                    = "spoke"
 spoke_vnet_address_space = ["172.16.1.0/24"]
