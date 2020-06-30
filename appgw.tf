@@ -1,3 +1,15 @@
+locals {
+  default_uri = var.application_gateway_default_uri != null ? true : false
+
+  // Map used by VM and VMSS
+  application_gateway_backend_pools = {
+    for bepool in azurerm_application_gateway.appgw.backend_address_pool :
+    (bepool.name) => {
+      name = bepool.name
+      id   = bepool.id
+    }
+  }
+}
 
 resource "azurerm_public_ip" "appgw" {
   name                = "appgw-pip"
@@ -39,7 +51,7 @@ resource "azurerm_application_gateway" "appgw" {
 
   gateway_ip_configuration {
     name      = "appGatewayIpConfig"
-    subnet_id = azurerm_subnet.AppGw.id
+    subnet_id = azurerm_subnet.app_gw.id
   }
 
   // ========================================================================
@@ -53,8 +65,8 @@ resource "azurerm_application_gateway" "appgw" {
   frontend_ip_configuration {
     name                          = "appGwPrivateFrontendIp"
     private_ip_address_allocation = "Static"
-    subnet_id                     = azurerm_subnet.AppGw.id
-    private_ip_address            = cidrhost(azurerm_subnet.AppGw.address_prefix, -2)
+    subnet_id                     = azurerm_subnet.app_gw.id
+    private_ip_address            = cidrhost(azurerm_subnet.app_gw.address_prefix, -2)
   }
 
   frontend_port {
@@ -93,63 +105,12 @@ resource "azurerm_application_gateway" "appgw" {
   */
 
   // ========================================================================
-  /*
-  backend_address_pool {
-    name = "web_pool1"
-  }
 
-  backend_http_settings {
-    name                  = "https_pool1"
-    affinity_cookie_name  = "https_pool1_cookie"
-    cookie_based_affinity = "Enabled"
-    host_name             = "azurecitadel.com"
-    path                  = "/"
-    port                  = 443
-    probe_name            = "Https"
-    protocol              = "Https"
-    request_timeout       = 20
-
-    connection_draining {
-      drain_timeout_sec = 60
-      enabled           = true
-    }
-  }
-
-  backend_address_pool {
-    name = "web_pool2"
-  }
-
-  backend_http_settings {
-    name                  = "https_pool2"
-    affinity_cookie_name  = "https_pool2_cookie"
-    cookie_based_affinity = "Disabled"
-    path                  = "/media/"
-    host_name             = "127.0.0.1"
-    port                  = 443
-    protocol              = "Https"
-    request_timeout       = 20
-  }
-
-  backend_address_pool {
-    name = "web_pool3"
-  }
-
-  backend_http_settings {
-    name                  = "https_pool3"
-    affinity_cookie_name  = "https_pool3_cookie"
-    cookie_based_affinity = "Disabled"
-    path                  = "/"
-    host_name             = "127.0.0.1"
-    port                  = 443
-    protocol              = "Https"
-    request_timeout       = 20
-  }
-*/
   dynamic "backend_address_pool" {
-    for_each = var.application_gateway_path_map
+    for_each = var.application_gateway_backend_pool_names
 
     content {
-      name = backend_address_pool.key
+      name = backend_address_pool.value
     }
   }
 
@@ -168,6 +129,17 @@ resource "azurerm_application_gateway" "appgw" {
       protocol              = "Http"
       request_timeout       = 20
     }
+  }
+
+  backend_http_settings {
+    name                  = "default_backend_http_settings"
+    affinity_cookie_name  = "default_backend_http_settings_cookie"
+    cookie_based_affinity = "Disabled"
+    path                  = "/"
+    host_name             = "127.0.0.1"
+    port                  = 80
+    protocol              = "Http"
+    request_timeout       = 20
   }
 
   probe {
@@ -217,8 +189,12 @@ resource "azurerm_application_gateway" "appgw" {
   }
 
   url_path_map {
-    name                                = "https_paths"
-    default_redirect_configuration_name = "redirect_default_uri"
+    name = "https_paths"
+
+    // Inly one of these defaults should be set
+    default_redirect_configuration_name = local.default_uri ? "default_redirect_configuration" : null
+    default_backend_address_pool_name   = local.default_uri ? null : var.application_gateway_default_backend_address_pool_name
+    default_backend_http_settings_name  = local.default_uri ? null : "default_backend_http_settings"
 
     dynamic "path_rule" {
       for_each = var.application_gateway_path_map
@@ -232,25 +208,16 @@ resource "azurerm_application_gateway" "appgw" {
     }
   }
 
-  redirect_configuration {
-    name                 = "redirect_default_uri"
-    redirect_type        = "Permanent"
-    target_url           = var.application_gateway_default_uri
-    include_path         = false
-    include_query_string = false
-  }
-}
+  dynamic "redirect_configuration" {
+    for_each = toset(local.default_uri ? [1] : [])
 
-
-locals {
-  application_gateway_backend_pool_ids = {
-    for bepool in azurerm_application_gateway.appgw.backend_address_pool :
-    (bepool.name) => bepool.id
-  }
-
-  application_gateway_probe_ids = {
-    for probe in azurerm_application_gateway.appgw.probe :
-    (probe.name) => probe.id
+    content {
+      name                 = "default_redirect_configuration"
+      redirect_type        = "Permanent"
+      target_url           = var.application_gateway_default_uri
+      include_path         = false
+      include_query_string = false
+    }
   }
 }
 
@@ -262,10 +229,6 @@ output "application_gateway_pip" {
   value = azurerm_public_ip.appgw
 }
 
-output "application_gateway_backend_pool_ids" {
-  value = local.application_gateway_backend_pool_ids
-}
-
-output "application_gateway_probe_ids" {
-  value = local.application_gateway_probe_ids
+output "application_gateway_backend_pools" {
+  value = local.application_gateway_backend_pools
 }

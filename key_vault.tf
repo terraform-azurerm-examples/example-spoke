@@ -16,9 +16,9 @@ resource "azurerm_key_vault" "spoke" {
     bypass         = "AzureServices"
     default_action = "Allow"
     virtual_network_subnet_ids = [
-      azurerm_subnet.Web.id,
-      azurerm_subnet.App.id,
-      azurerm_subnet.AppGw.id,
+      azurerm_subnet.web.id,
+      azurerm_subnet.app.id,
+      azurerm_subnet.app_gw.id,
     ]
   }
 }
@@ -59,6 +59,8 @@ resource "azurerm_key_vault_access_policy" "managed_identity" {
 
   tenant_id = var.tenant_id
   object_id = azurerm_user_assigned_identity.spoke.principal_id
+
+  // Tighten these up if necessary
 
   certificate_permissions = [
     "Get",

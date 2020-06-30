@@ -33,9 +33,9 @@ variable "application_gateway_public_frontend" {
   default     = false
 }
 
-variable "application_gateway_pools" {
+variable "application_gateway_backend_pool_names" {
   description = "List of backend pools to create in the application gateway. Also used to create matching application security groups."
-  type        = list
+  type        = list(string)
   default     = []
 }
 
@@ -46,14 +46,21 @@ variable "application_gateway_path_map" {
 }
 
 variable "application_gateway_default_uri" {
-  description = "Default URI to use if none of the path maps apply."
+  description = "Default URI to use if none of the path maps apply. Use either application_gateway_default_uri or application_gateway_default_backend_address_pool_name."
   type        = string
-  default     = ""
+  default     = null
+}
+
+variable "application_gateway_default_backend_address_pool_name" {
+  description = "Default backend pool to use if none of the path maps apply. Use either application_gateway_default_uri or application_gateway_default_backend_address_pool_name."
+  type        = string
+  default     = null
 }
 
 // -----------------------------------------------------------
 
 variable "tenant_id" {
+  // Switch to current tenant_id as per the hub?
   description = "The AAD tenant guid."
   type        = string
 }

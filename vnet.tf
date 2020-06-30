@@ -6,7 +6,7 @@ resource "azurerm_virtual_network" "spoke" {
   address_space       = var.spoke_vnet_address_space
 }
 
-resource "azurerm_subnet" "Web" {
+resource "azurerm_subnet" "web" {
   depends_on           = [azurerm_virtual_network.spoke]
   name                 = "Web" // .0/26
   resource_group_name  = azurerm_resource_group.spoke.name
@@ -17,8 +17,8 @@ resource "azurerm_subnet" "Web" {
 
 }
 
-resource "azurerm_subnet" "App" {
-  depends_on           = [azurerm_subnet.Web]
+resource "azurerm_subnet" "app" {
+  depends_on           = [azurerm_subnet.web]
   name                 = "App" // .128/26
   resource_group_name  = azurerm_resource_group.spoke.name
   virtual_network_name = azurerm_virtual_network.spoke.name
@@ -28,8 +28,8 @@ resource "azurerm_subnet" "App" {
 
 }
 
-resource "azurerm_subnet" "AppGw" {
-  depends_on           = [azurerm_subnet.App]
+resource "azurerm_subnet" "app_gw" {
+  depends_on           = [azurerm_subnet.app]
   name                 = "AppGw" // .240/28
   resource_group_name  = azurerm_resource_group.spoke.name
   virtual_network_name = azurerm_virtual_network.spoke.name

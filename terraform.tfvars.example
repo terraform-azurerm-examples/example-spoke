@@ -6,7 +6,7 @@ subscription_id = "2ca40be1-7e80-4f2b-92f7-06b2123a68cc"
 //   "10608c01-619a-4c23-bdbc-b5d22aeb2f09" // mySpokeApplication group
 // ]
 
-spoke                    = "spoke"
+spoke                    = "example-spoke"
 spoke_vnet_address_space = ["172.16.1.0/24"]
 
 
@@ -24,3 +24,18 @@ tags = {
 ssh_public_keys = [
   { username = "ubuntu", ssh_public_key_file = "~/.ssh/id_rsa.pub" }
 ]
+
+application_gateway_backend_pool_names = [
+  // Only really need this if the keys from the path map doesn't exactly match
+  "web",
+  "media",
+  "catalog",
+]
+
+application_gateway_path_map = {
+  "media"    = ["/media"],
+  "catalog"  = ["/catalog"],
+}
+
+// application_gateway_default_uri = "index.html"
+application_gateway_default_backend_address_pool_name = "web"

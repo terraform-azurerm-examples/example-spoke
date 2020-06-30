@@ -1,0 +1,17 @@
+// data "terraform_remote_state" "hub" {
+//   backend = "azurerm"
+//
+//   config = {
+//     resource_group_name  = "terraform"
+//     storage_account_name = "ChangeMe"
+//     container_name       = "tfstate"
+//     key                  = "ChangeMeToo" // "example-hub.tfstate"
+//   }
+// }
+
+// data "terraform_remote_state" "hub" {
+//   backend = "local"
+//   config = {
+//     path = "relative/path/to/terraform.tfstate"
+//   }
+// }
